@@ -1,11 +1,11 @@
-# Laravel Filter
+# HelloDialog API Connector 
 
 [![Latest Version on Packagist][ico-version]][link-packagist]
 [![Software License][ico-license]](LICENSE.md)
 [![Build Status](https://travis-ci.org/czim/hellodialog.svg?branch=master)](https://travis-ci.org/czim/hellodialog)
 [![Latest Stable Version](http://img.shields.io/packagist/v/czim/hellodialog.svg)](https://packagist.org/packages/czim/hellodialog)
 
-HelloDialog API handler package.
+HelloDialog API connector / handler package.
 
 ## Install
 
