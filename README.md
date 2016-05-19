@@ -15,9 +15,17 @@ Via Composer
 $ composer require czim/hellodialog
 ```
 
-Then add the service provider in `config/app.php`:
+Then add the service providers in `config/app.php`:
 
-    'Czim\HelloDialog\HelloDialogServiceProvider',
+    Czim\HelloDialog\HelloDialogServiceProvider::class,
+    Czim\HelloDialog\Mail\MailServiceProvider::class,
+
+In the same file, comment out or remove the standard Laravel MailServiceProvider:
+
+    //Illuminate\Mail\MailServiceProvider::class,
+    
+Note that this step, and adding the `MailServiceProvider` is only necessary if you plan to use the `hellodialog` mail driver for use with Laravel's `Mail` facade. 
+If not, only the `HelloDialogServiceProvider` is required.
 
 Finally publish the config using the artisan command:
 
@@ -25,6 +33,9 @@ Finally publish the config using the artisan command:
 $ php artisan vendor:publish
 ```
 
+## Configuration
+
+Set the configuration in `config/hellodialog.php`.
 
 ## Basic Usage
 
