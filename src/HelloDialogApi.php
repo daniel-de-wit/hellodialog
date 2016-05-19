@@ -1,16 +1,22 @@
 <?php
 namespace Czim\HelloDialog;
 
+use Czim\HelloDialog\Contracts\HelloDialogApiInterface;
+use Czim\HelloDialog\Exceptions\ConnectionException;
 use Exception;
+use GuzzleHttp\Client;
+use GuzzleHttp\Exception\ClientException;
+use GuzzleHttp\Psr7\Response;
 
 /**
  * Class HelloDialogApi
  *
- * Formerly known as KBApi.
- * To use this outside of laravel, be sure to pass in all constructor parameters
+ * Formerly known as KBApi. To use this outside of laravel,
+ * be sure to pass in all constructor parameters
  */
-class HelloDialogApi
+class HelloDialogApi implements HelloDialogApiInterface
 {
+
     /**
      * API Token
      *
@@ -66,29 +72,50 @@ class HelloDialogApi
     ];
 
     /**
+     * Guzzle client
+     *
+     * @var null|Client
+     */
+    protected $client;
+
+    /**
+     * @var null|Exceptions\HelloDialogError
+     */
+    protected $lastError;
+
+    /**
      * Constructor
      *
-     * @param string $path   url path, such as 'transactional'
-     * @param string $token  if set, override the config-defined token
-     * @param string $url    base url to the API itself (requires trailing slash)
+     * @param string      $path  url path, such as 'transactional'
+     * @param string      $token if set, override the config-defined token
+     * @param string      $url   base url to the API itself (requires trailing slash)
+     * @param null|Client $client
      */
-    public function __construct($path, $token = null, $url = null)
+    public function __construct($path, $token = null, $url = null, $client = null)
     {
-        $this->path = $path;
-
-
-        if (is_null($token)) {
-            $token = config('hellodialog.token');
-        }
-        $this->token = $token;
-
-
-        if (is_null($url)) {
-            $url = config('hellodialog.url');
-        }
-        $this->url = $url;
+        $this->path   = $path;
+        $this->token  = $token ?: config('hellodialog.token');
+        $this->url    = $url ?: config('hellodialog.url');
+        $this->client = $client ?: $this->buildGuzzleClient();
 
         return $this;
+    }
+
+    /**
+     * @return Client
+     */
+    protected function buildGuzzleClient()
+    {
+        $client = app(
+            Client::class,
+            [
+                [
+                'base_uri' => $this->url . '/' . ltrim($this->path, '/'),
+                ]
+            ]
+        );
+
+        return $client;
     }
 
     /**
@@ -115,7 +142,6 @@ class HelloDialogApi
         return $this;
     }
 
-
     /**
      * Sets a key value pair with a given condition
      *
@@ -128,7 +154,6 @@ class HelloDialogApi
     public function condition($key, $value, $condition = 'equals')
     {
         if ( ! in_array($condition, $this->validConditions)) {
-
             throw new Exception("'{$condition}' is not a valid condition");
         }
 
@@ -187,9 +212,8 @@ class HelloDialogApi
         return $this->request('POST');
     }
 
-
     /**
-     * Perfoms a cURL request to the API
+     * Perfoms a request to the API
      *
      * @param string $method
      * @param string $id
@@ -198,46 +222,100 @@ class HelloDialogApi
      */
     protected function request($method, $id = null)
     {
-        if (is_null($this->path)) {
+        $this->lastError = null;
+        
+        $this->checkBeforeRequest();
+
+        try {
+            $response = $this->client->request($method, $id ?: null, $this->buildGuzzleOptions($method));
+
+        } catch (ClientException $e) {
+
+            throw new ConnectionException($e->getMessage(), $e->getCode(), $e);
+        }
+
+        return $this->handleResponse($response);
+
+        //    $requestUrl .= '&condition[' . $key . ']='
+        //                 . $data['condition'] . '&values[' . $key . ']='
+        //                 . urlencode($data['value']);
+    }
+
+    /**
+     * Checks conditions and properties before performing a request
+     *
+     * @throws Exception
+     */
+    protected function checkBeforeRequest()
+    {
+        if (empty($this->path)) {
             throw new Exception("No url specified");
         }
 
-        if (is_null($this->token)) {
+        if (empty($this->token)) {
             throw new Exception("API token is required");
         }
+    }
 
-        $curl = curl_init();
+    /**
+     * Builds and returns the guzzle options to send with a request
+     *
+     * @param string $method
+     * @return array
+     */
+    protected function buildGuzzleOptions($method = 'GET')
+    {
+        $options = [
+            'verify' => false, // do not verify SSL certificate
+        ];
 
-        $requestUrl = $this->url . $this->path;
-
-        if ( ! is_null($id)) {
-            $requestUrl .= '/' . $id;
+        // set data in body for PUT, POST or PATCH
+        if (in_array($method, ['PATCH','POST', 'PUT'])) {
+            $options['body'] = json_encode($this->data);
         }
 
-        $requestUrl .= '?token=' . $this->token;
+        // always set request parameters
+        $requestParameters = [
+            'token' => $this->token,
+        ];
 
         foreach ($this->conditions as $key => $data) {
-
-            $requestUrl .= '&condition[' . $key . ']='
-                         . $data['condition'] . '&values[' . $key . ']='
-                         . urlencode($data['value']);
+            $requestParameters[ 'condition[' . $key . ']' ] = $data['condition'];
+            $requestParameters[ 'values[' . $key . ']' ]    = $data['value'];
         }
 
-        if ( ! empty($this->data)) {
+        $options['query'] = $requestParameters;
 
-            curl_setopt($curl, CURLOPT_POSTFIELDS, json_encode($this->data));
+        return $options;
+    }
+
+    /**
+     * @param Response $response
+     * @return array
+     * @throws Exceptions\ConnectionException
+     * @throws Exceptions\HelloDialogError
+     */
+    protected function handleResponse(Response $response)
+    {
+        if ($response->getStatusCode() < 200 || $response->getStatusCode() > 299) {
+            throw new Exceptions\ConnectionException("Received unexpected status code: {$response->getStatusCode()}");
         }
 
-        curl_setopt($curl, CURLOPT_URL, $requestUrl);
-        curl_setopt($curl, CURLOPT_CUSTOMREQUEST, $method);
-        curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, false);
-        curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+        $responseArray = json_decode($response->getBody()->getContents(), true);
 
-        $response = curl_exec($curl);
+        if ( ! is_array($responseArray)) {
+            throw new Exceptions\ConnectionException("Received unexpected body content, invalid json.");
+        }
 
-        curl_close($curl);
+        // detect error response
+        if (strtolower(array_get($responseArray, 'result.status', '')) == 'error') {
+            throw new Exceptions\HelloDialogError(
+                array_get($responseArray, 'result.message', null),
+                array_get($responseArray, 'result.code', 0)
+            );
+        }
 
-        return json_decode($response, true);
+        return $responseArray;
     }
 
 }
