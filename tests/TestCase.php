@@ -46,6 +46,13 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
         ]);
     }
 
+    public function tearDown()
+    {
+        $this->server->stop();
+
+        parent::tearDown();
+    }
+
     /**
      * @param null|string $path
      * @return HelloDialogApi
