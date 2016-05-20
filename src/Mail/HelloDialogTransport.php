@@ -2,22 +2,23 @@
 namespace Czim\HelloDialog\Mail;
 
 use Czim\HelloDialog\Contracts\HelloDialogApiInterface;
+use Czim\HelloDialog\Contracts\HelloDialogHandlerInterface;
 use Illuminate\Mail\Transport\Transport;
 use Swift_Mime_Message;
 
 class HelloDialogTransport extends Transport
 {
     /**
-     * @var HelloDialogApiInterface
+     * @var HelloDialogHandlerInterface
      */
-    protected $api;
+    protected $handler;
 
     /**
-     * @param HelloDialogApiInterface $api
+     * @param HelloDialogHandlerInterface $handler
      */
-    public function __construct(HelloDialogApiInterface $api)
+    public function __construct(HelloDialogHandlerInterface $handler)
     {
-        $this->api = $api;
+        $this->handler = $handler;
     }
 
     /**
