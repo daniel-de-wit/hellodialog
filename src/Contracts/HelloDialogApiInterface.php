@@ -5,6 +5,7 @@ use Exception;
 
 interface HelloDialogApiInterface
 {
+
     /**
      * Clears conditions and data
      *
