@@ -1,6 +1,8 @@
 <?php
 namespace Czim\HelloDialog;
 
+use Czim\HelloDialog\Contracts\HelloDialogApiInterface;
+use Czim\HelloDialog\Contracts\HelloDialogHandlerInterface;
 use Illuminate\Support\ServiceProvider;
 
 class HelloDialogServiceProvider extends ServiceProvider
@@ -18,6 +20,18 @@ class HelloDialogServiceProvider extends ServiceProvider
         $this->mergeConfigFrom(
             __DIR__ . '/config/hellodialog.php', 'hellodialog'
         );
+
+        $this->registerHelloDialogInterfaces();
+    }
+
+
+    /**
+     * Register Hello Dialog class interfaces
+     */
+    protected function registerHelloDialogInterfaces()
+    {
+        $this->app->bind(HelloDialogApiInterface::class, HelloDialogApi::class);
+        $this->app->bind(HelloDialogHandlerInterface::class, HelloDialogHandler::class);
     }
 
 }
