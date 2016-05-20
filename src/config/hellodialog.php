@@ -42,13 +42,33 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Mail Facade
+    |--------------------------------------------------------------------------
+    |
+    | Configuration for using the Mail facade with the hellodialog driver
+    |
+    */
+
+    'mail' => [
+
+        // Template ID to use
+        'template' => 1,
+
+        // Expected replaces for typical transactional mails
+        // These MUST have a content replace, and MAY have a title replace.
+        'replaces' => [
+            'title'   => '__TITLE__',
+            'content' => '__BODY__',
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Templates
     |--------------------------------------------------------------------------
     |
-    | The default template set will be used by the SwiftMailer implementation
-    | and the default mailing methods (expecting a simple message replacement).
-    |
-    | Other templates may be defined here.
+    | The default template set will be used when no template is given.
+    | Other / custom templates may be defined here.
     |
     */
 
