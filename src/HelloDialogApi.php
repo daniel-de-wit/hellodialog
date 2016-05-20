@@ -79,7 +79,7 @@ class HelloDialogApi implements HelloDialogApiInterface
     protected $client;
 
     /**
-     * @var null|Exceptions\HelloDialogError
+     * @var null|Exceptions\HelloDialogErrorException
      */
     protected $lastError;
 
@@ -293,7 +293,7 @@ class HelloDialogApi implements HelloDialogApiInterface
      * @param Response $response
      * @return array
      * @throws Exceptions\ConnectionException
-     * @throws Exceptions\HelloDialogError
+     * @throws Exceptions\HelloDialogErrorException
      */
     protected function handleResponse(Response $response)
     {
@@ -309,7 +309,7 @@ class HelloDialogApi implements HelloDialogApiInterface
 
         // detect error response
         if (strtolower(array_get($responseArray, 'result.status', '')) == 'error') {
-            throw new Exceptions\HelloDialogError(
+            throw new Exceptions\HelloDialogErrorException(
                 array_get($responseArray, 'result.message', null),
                 array_get($responseArray, 'result.code', 0)
             );
