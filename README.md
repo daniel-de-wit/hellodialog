@@ -15,17 +15,9 @@ Via Composer
 $ composer require czim/hellodialog
 ```
 
-Then add the service providers in `config/app.php`:
+Then add the service provider in `config/app.php`:
 
     Czim\HelloDialog\HelloDialogServiceProvider::class,
-    Czim\HelloDialog\Mail\MailServiceProvider::class,
-
-In the same file, comment out or remove the standard Laravel MailServiceProvider:
-
-    //Illuminate\Mail\MailServiceProvider::class,
-    
-Note that this step, and adding the `MailServiceProvider` is only necessary if you plan to use the `hellodialog` mail driver for use with Laravel's `Mail` facade. 
-If not, only the `HelloDialogServiceProvider` is required.
 
 Finally publish the config using the artisan command:
 
@@ -37,11 +29,40 @@ $ php artisan vendor:publish
 
 Set the configuration in `config/hellodialog.php`.
 
+
 ## Basic Usage
 
-Set up the configuration and instantiate the class. Then call the function.
+After installation and configuration, the `HelloDialogHandler` will be available to make custom calls to HelloDialog. The `hellodialog` mail driver is also available.
 
-To Do: expand on this. 
+### The Mail Driver
+
+See the `hellodialog.php` config file for further details about configuring and using the mail driver.
+Note that you cannot use all mail properties using this driver (BCC does not work, for instance). 
+As always with HelloDialog, sending to multiple addresses will result in multiple calls to the HelloDialog API and will be mailed separately. 
+
+When using the mail driver, a transactional template is expected with at least a 'content' replace, and optionally a 'title' replace. The placeholder for these may be set in the config (defaults to `__CONTENT__`). The entire mail view contents will be used as the 'content' replace value.
+
+### Performing Calls
+
+To manually perform calls, instantiate the `HelloDialogHandler` class.
+
+```php
+    $handler = app(\Czim\HelloDialog\Contracts\HelloDialogHandlerInterface::class);
+    // or:
+    $handler = new \Czim\HelloDialog\HelloDialogHandler();
+```
+
+Available methods are listed [in the HelloDialogHandlerInterface](https://github.com/czim/hellodialog/blob/master/src/Contracts/HelloDialogHandlerInterface.php).
+
+
+## Templates
+
+Templates can be referred to by numerical ID, or the key set for their section in the config (which *must* have an `id` property set).
+
+## Logging
+
+By default, any logging will be done using Laravel's `Log` facade.
+Alternatively, you may pass in a custom Monolog logger (anything that implements `Psr\Log\LoggerInterface`) when instantiating the `HelloDialogHandler`.
 
 
 ## Contributing
