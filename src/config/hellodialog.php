@@ -50,7 +50,6 @@ return [
     */
 
     'mail' => [
-
         // Template ID to use
         'template' => 1,
 
@@ -58,8 +57,11 @@ return [
         // These MUST have a content replace, and MAY have a title replace.
         'replaces' => [
             'title'   => '__TITLE__',
-            'content' => '__BODY__',
+            'content' => '__CONTENT__',
         ],
+
+        // Set as array to set specific sender, or null to use default
+        'sender' => null,
     ],
 
     /*
@@ -75,7 +77,6 @@ return [
     'default_template' => 'transactional',
 
     'templates' => [
-
         'transactional' => [
             'id' => 1,
         ],
