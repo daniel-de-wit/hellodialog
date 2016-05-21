@@ -3,6 +3,7 @@ namespace Czim\HelloDialog;
 
 use Czim\HelloDialog\Contracts\HelloDialogApiInterface;
 use Czim\HelloDialog\Contracts\HelloDialogHandlerInterface;
+use Czim\HelloDialog\Mail\HelloDialogTransport;
 use Illuminate\Support\ServiceProvider;
 
 class HelloDialogServiceProvider extends ServiceProvider
@@ -13,6 +14,8 @@ class HelloDialogServiceProvider extends ServiceProvider
         $this->publishes([
             __DIR__ . '/config/hellodialog.php' => config_path('hellodialog.php'),
         ]);
+
+        $this->registerHelloDialogMailDriver();
     }
 
     public function register()
@@ -26,7 +29,7 @@ class HelloDialogServiceProvider extends ServiceProvider
 
 
     /**
-     * Register Hello Dialog class interfaces
+     * Registers Hello Dialog class interfaces
      */
     protected function registerHelloDialogInterfaces()
     {
@@ -34,4 +37,17 @@ class HelloDialogServiceProvider extends ServiceProvider
         $this->app->bind(HelloDialogHandlerInterface::class, HelloDialogHandler::class);
     }
 
+    /**
+     * Registers a custom mail driver with the transport manager
+     */
+    protected function registerHelloDialogMailDriver()
+    {
+        $this->app['swift.transport']->extend(
+            'hellodialog',
+            $this->app->share(function ($app) {
+                $handler = $app->make(HelloDialogHandlerInterface::class);
+                return new HelloDialogTransport($handler);
+            })
+        );
+    }
 }
