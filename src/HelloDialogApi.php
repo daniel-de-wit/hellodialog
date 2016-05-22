@@ -7,6 +7,7 @@ use Exception;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\ClientException;
 use GuzzleHttp\Psr7\Response;
+use Log;
 
 /**
  * Class HelloDialogApi
@@ -225,6 +226,15 @@ class HelloDialogApi implements HelloDialogApiInterface
         $this->lastError = null;
         
         $this->checkBeforeRequest();
+
+        // mock the call instead?
+        if (config('hellodialog.mock')) {
+            Log::debug("Mocked {$method} request to HelloDialog.", [
+                'id'         => $id,
+                'data'       => $this->data,
+                'conditions' => $this->conditions,
+            ]);
+        }
 
         try {
             $response = $this->client->request($method, $id ?: null, $this->buildGuzzleOptions($method));
