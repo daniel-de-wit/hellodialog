@@ -236,6 +236,7 @@ class HelloDialogApi implements HelloDialogApiInterface
 
         return $this->handleResponse($response);
 
+        // todo: remove old code after testing
         //    $requestUrl .= '&condition[' . $key . ']='
         //                 . $data['condition'] . '&values[' . $key . ']='
         //                 . urlencode($data['value']);
