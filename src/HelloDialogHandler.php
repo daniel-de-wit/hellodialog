@@ -87,6 +87,13 @@ class HelloDialogHandler implements HelloDialogHandlerInterface
                 throw new HelloDialogGeneralException('No result given, configuration error?');
             }
 
+            if (config('hellodialog.debug')) {
+                $this->log('transactional', [
+                    'data'   => $data,
+                    'result' => $result,
+                ]);
+            }
+
             $this->checkForHelloDialogError($result);
 
         } catch (Exception $e) {
@@ -112,6 +119,7 @@ class HelloDialogHandler implements HelloDialogHandlerInterface
         } catch (Exception $e) {
             // Contact type was invalid, continue gracefully with optin state
             $fields['_state'] = ContactType::OPT_IN;
+            $this->logException($e);
         }
 
         // Check if contact exists first
@@ -123,8 +131,17 @@ class HelloDialogHandler implements HelloDialogHandlerInterface
             try {
                 $contactId = $this->createContact($fields);
 
-            } catch (Exception $e) {
+                if (config('hellodialog.debug')) {
+                    $this->log('createContact', [
+                        'contactId' => $contactId,
+                        'state'     => $state,
+                        'data'      => $fields,
+                        'new'       => true,
+                    ]);
+                }
 
+            } catch (Exception $e) {
+                $this->logException($e);
                 return false;
             }
 
@@ -145,7 +162,16 @@ class HelloDialogHandler implements HelloDialogHandlerInterface
 
             $contact = $this->updateContact($contact['id'], $fields);
 
+            if (config('hellodialog.debug')) {
+                $this->log('createContact', [
+                    'state'   => $state,
+                    'data'    => $fields,
+                    'contact' => $contact,
+                ]);
+            }
+
         } catch (Exception $e) {
+            $this->logException($e);
             return false;
         }
 
@@ -165,6 +191,13 @@ class HelloDialogHandler implements HelloDialogHandlerInterface
 
         $this->checkForHelloDialogError($result);
 
+        if (config('hellodialog.debug')) {
+            $this->log('createContact', [
+                'data'   => $fields,
+                'result' => $result,
+            ]);
+        }
+
         return array_get($result, 'result.data.id');
     }
 
@@ -181,6 +214,14 @@ class HelloDialogHandler implements HelloDialogHandlerInterface
             ->put($contactId);
 
         $this->checkForHelloDialogError($result);
+
+        if (config('hellodialog.debug')) {
+            $this->log('updateContact', [
+                'contactId' => $contactId,
+                'data'      => $fields,
+                'result'    => $result,
+            ]);
+        }
 
         return array_get($result, 'result.data.id');
     }
@@ -269,12 +310,29 @@ class HelloDialogHandler implements HelloDialogHandlerInterface
      */
     protected function logException(Exception $e)
     {
+        $this->log($e->getMessage(), [ 'exception' => $e ]);
+    }
+
+    /**
+     * @param       $type
+     * @param array $extra
+     */
+    protected function logActivity($type, array $extra = [])
+    {
+        $this->log($type, $extra);
+    }
+
+    /**
+     * @param string $message
+     * @param array  $extra
+     */
+    protected function log($message, array $extra = [])
+    {
         if ($this->logger) {
-            $this->logger->error($e->getMessage(), [ 'exception' => $e ]);
+            $this->logger->error($message, $extra);
             return;
         }
 
-        Log::error($e->getMessage(), [ 'exception' => $e ]);
+        Log::error($message, $extra);
     }
-
 }
