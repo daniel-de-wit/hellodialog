@@ -234,6 +234,8 @@ class HelloDialogApi implements HelloDialogApiInterface
                 'data'       => $this->data,
                 'conditions' => $this->conditions,
             ]);
+
+            return $this->makeMockResponse();
         }
 
         try {
@@ -327,6 +329,19 @@ class HelloDialogApi implements HelloDialogApiInterface
         }
 
         return $responseArray;
+    }
+
+    /**
+     * Returns standard mocked response that signifies a standard 'OK'
+     */
+    protected function makeMockResponse()
+    {
+        return [
+            'result' => [
+                'code'    => 200,
+                'message' => 'Mocked.',
+            ]
+        ];
     }
 
 }
