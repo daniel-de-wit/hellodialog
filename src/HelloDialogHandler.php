@@ -88,7 +88,7 @@ class HelloDialogHandler implements HelloDialogHandlerInterface
             }
 
             if (config('hellodialog.debug')) {
-                $this->log('transactional', [
+                $this->log('transactional', 'debug', [
                     'data'   => $data,
                     'result' => $result,
                 ]);
@@ -163,7 +163,7 @@ class HelloDialogHandler implements HelloDialogHandlerInterface
             $contact = $this->updateContact($contact['id'], $fields);
 
             if (config('hellodialog.debug')) {
-                $this->log('createContact', [
+                $this->log('createContact', 'debug', [
                     'state'   => $state,
                     'data'    => $fields,
                     'contact' => $contact,
@@ -192,7 +192,7 @@ class HelloDialogHandler implements HelloDialogHandlerInterface
         $this->checkForHelloDialogError($result);
 
         if (config('hellodialog.debug')) {
-            $this->log('createContact', [
+            $this->log('createContact', 'debug', [
                 'data'   => $fields,
                 'result' => $result,
             ]);
@@ -216,7 +216,7 @@ class HelloDialogHandler implements HelloDialogHandlerInterface
         $this->checkForHelloDialogError($result);
 
         if (config('hellodialog.debug')) {
-            $this->log('updateContact', [
+            $this->log('updateContact', 'debug', [
                 'contactId' => $contactId,
                 'data'      => $fields,
                 'result'    => $result,
@@ -310,7 +310,7 @@ class HelloDialogHandler implements HelloDialogHandlerInterface
      */
     protected function logException(Exception $e)
     {
-        $this->log($e->getMessage(), [ 'exception' => $e ]);
+        $this->log($e->getMessage(), 'error', [ 'exception' => $e ]);
     }
 
     /**
@@ -319,20 +319,21 @@ class HelloDialogHandler implements HelloDialogHandlerInterface
      */
     protected function logActivity($type, array $extra = [])
     {
-        $this->log($type, $extra);
+        $this->log($type, 'debug', $extra);
     }
 
     /**
      * @param string $message
+     * @param string $level
      * @param array  $extra
      */
-    protected function log($message, array $extra = [])
+    protected function log($message, $level = 'debug', array $extra = [])
     {
         if ($this->logger) {
             $this->logger->error($message, $extra);
             return;
         }
 
-        Log::error($message, $extra);
+        Log::log($level, $message, $extra);
     }
 }
