@@ -132,7 +132,7 @@ class HelloDialogHandler implements HelloDialogHandlerInterface
                 $contactId = $this->createContact($fields);
 
                 if (config('hellodialog.debug')) {
-                    $this->log('createContact', [
+                    $this->log('createContact', 'debug', [
                         'contactId' => $contactId,
                         'state'     => $state,
                         'data'      => $fields,
@@ -330,7 +330,7 @@ class HelloDialogHandler implements HelloDialogHandlerInterface
     protected function log($message, $level = 'debug', array $extra = [])
     {
         if ($this->logger) {
-            $this->logger->error($message, $extra);
+            $this->logger->log($level, $message, $extra);
             return;
         }
 
