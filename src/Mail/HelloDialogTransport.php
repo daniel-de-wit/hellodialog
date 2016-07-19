@@ -73,7 +73,7 @@ class HelloDialogTransport extends Transport
             ];
 
         } else {
-            $from = config('hellodialog.mail.from') ?: config('hellodialog.from');
+            $from = config('hellodialog.mail.sender') ?: config('hellodialog.sender');
         }
         
         return $from;
