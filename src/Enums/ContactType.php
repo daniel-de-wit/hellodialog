@@ -1,5 +1,5 @@
 <?php
-namespace Czim\Repository\Enums;
+namespace Czim\HelloDialog\Enums;
 
 use MyCLabs\Enum\Enum;
 

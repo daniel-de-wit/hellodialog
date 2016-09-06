@@ -5,7 +5,7 @@ use Czim\HelloDialog\Contracts\HelloDialogApiInterface;
 use Czim\HelloDialog\Contracts\HelloDialogHandlerInterface;
 use Czim\HelloDialog\Exceptions\HelloDialogErrorException;
 use Czim\HelloDialog\Exceptions\HelloDialogGeneralException;
-use Czim\Repository\Enums\ContactType;
+use Czim\HelloDialog\Enums\ContactType;
 use Exception;
 use Log;
 use Psr\Log\LoggerInterface;
