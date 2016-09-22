@@ -35,4 +35,13 @@ interface HelloDialogHandlerInterface
      */
     public function createContact(array $fields);
 
+    /**
+     * Fetches the contents of a template, optionally performing placeholder replaces.
+     *
+     * @param int   $templateId
+     * @param array $replaces
+     * @return string
+     */
+    public function getTemplateContents($templateId, array $replaces = []);
+
 }

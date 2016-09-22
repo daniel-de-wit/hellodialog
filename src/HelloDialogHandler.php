@@ -14,6 +14,7 @@ use UnexpectedValueException;
 class HelloDialogHandler implements HelloDialogHandlerInterface
 {
     const API_CONTACTS      = 'contacts';
+    const API_NEWSLETTERS   = 'newsletter';
     const API_TRANSACTIONAL = 'transactional';
 
     /**
@@ -227,6 +228,29 @@ class HelloDialogHandler implements HelloDialogHandlerInterface
 
         return array_get($result, 'result.data.id');
     }
+
+    /**
+     * Fetches the contents of a template, optionally performing placeholder replaces.
+     *
+     * @param int   $templateId
+     * @param array $replaces
+     * @return string
+     */
+    public function getTemplateContents($templateId, array $replaces = [])
+    {
+        $result = $this->getApiInstance(static::API_NEWSLETTERS)->get($templateId);
+
+        $this->checkForHelloDialogError($result);
+
+        $result = $result['html'];
+
+        if (count($replaces)) {
+            $result = str_replace(array_keys($replaces), array_values($replaces), $result);
+        }
+
+        return $result;
+    }
+
 
     /**
      * @param string $email
