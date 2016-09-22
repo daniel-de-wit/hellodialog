@@ -107,16 +107,7 @@ class HelloDialogApi implements HelloDialogApiInterface
      */
     protected function buildGuzzleClient()
     {
-        $client = app(
-            Client::class,
-            [
-                [
-                'base_uri' => $this->url . '/' . ltrim($this->path, '/'),
-                ]
-            ]
-        );
-
-        return $client;
+        return app(Client::class);
     }
 
     /**
@@ -238,8 +229,16 @@ class HelloDialogApi implements HelloDialogApiInterface
             return $this->makeMockResponse();
         }
 
+        // prepare the URL
+        $url = $this->getBaseUrl();
+
+        if ($id) {
+            $url = rtrim($url, '/') . '/' . $id;
+        }
+
+
         try {
-            $response = $this->client->request($method, $id ?: null, $this->buildGuzzleOptions($method));
+            $response = $this->client->request($method, $url, $this->buildGuzzleOptions($method));
 
         } catch (ClientException $e) {
 
@@ -333,6 +332,8 @@ class HelloDialogApi implements HelloDialogApiInterface
 
     /**
      * Returns standard mocked response that signifies a standard 'OK'
+     *
+     * @return array
      */
     protected function makeMockResponse()
     {
@@ -342,6 +343,16 @@ class HelloDialogApi implements HelloDialogApiInterface
                 'message' => 'Mocked.',
             ]
         ];
+    }
+
+    /**
+     * Returns the base URL + Path.
+     *
+     * @return string
+     */
+    protected function getBaseUrl()
+    {
+        return $this->url . '/' . ltrim($this->path, '/');
     }
 
 }
