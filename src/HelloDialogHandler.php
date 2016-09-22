@@ -13,6 +13,8 @@ use UnexpectedValueException;
 
 class HelloDialogHandler implements HelloDialogHandlerInterface
 {
+    const API_CONTACTS      = 'contacts';
+    const API_TRANSACTIONAL = 'transactional';
 
     /**
      * Logger. If not set, logs using the Log facade.
@@ -79,7 +81,7 @@ class HelloDialogHandler implements HelloDialogHandlerInterface
         ];
 
         try {
-            $result = $this->getApiInstance('transactional')
+            $result = $this->getApiInstance(static::API_TRANSACTIONAL)
                 ->data($data)
                 ->post();
             
@@ -88,7 +90,7 @@ class HelloDialogHandler implements HelloDialogHandlerInterface
             }
 
             if (config('hellodialog.debug')) {
-                $this->log('transactional', 'debug', [
+                $this->log(static::API_TRANSACTIONAL, 'debug', [
                     'data'   => $data,
                     'result' => $result,
                 ]);
@@ -185,7 +187,7 @@ class HelloDialogHandler implements HelloDialogHandlerInterface
      */
     public function createContact(array $fields)
     {
-        $result = $this->getApiInstance('contacts')
+        $result = $this->getApiInstance(static::API_CONTACTS)
             ->data($fields)
             ->post();
 
@@ -209,7 +211,7 @@ class HelloDialogHandler implements HelloDialogHandlerInterface
      */
     protected function updateContact($contactId, array $fields)
     {
-        $result = $this->getApiInstance('contacts')
+        $result = $this->getApiInstance(static::API_CONTACTS)
             ->data($fields)
             ->put($contactId);
 
@@ -232,7 +234,7 @@ class HelloDialogHandler implements HelloDialogHandlerInterface
      */
     protected function checkIfEmailExists($email)
     {
-        $existance = $this->getApiInstance('contacts')
+        $existance = $this->getApiInstance(static::API_CONTACTS)
             ->condition('email', $email, 'equals')
             ->condition('_state', ContactType::CONTACT, 'equals')
             ->get();
@@ -245,7 +247,7 @@ class HelloDialogHandler implements HelloDialogHandlerInterface
      * @param string $type
      * @return HelloDialogApiInterface
      */
-    protected function getApiInstance($type = 'transactional')
+    protected function getApiInstance($type = self::API_TRANSACTIONAL)
     {
         if ( ! isset($this->apiInstances[ $type ])) {
             $this->apiInstances[ $type ] = $this->buildApiInstance($type);
@@ -336,4 +338,5 @@ class HelloDialogHandler implements HelloDialogHandlerInterface
 
         Log::log($level, $message, $extra);
     }
+
 }
