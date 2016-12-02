@@ -210,7 +210,7 @@ class HelloDialogHandler implements HelloDialogHandlerInterface
      * @return string|int  ID of updated contact
      * @throws Exception
      */
-    protected function updateContact($contactId, array $fields)
+    public function updateContact($contactId, array $fields)
     {
         $result = $this->getApiInstance(static::API_CONTACTS)
             ->data($fields)
@@ -227,6 +227,56 @@ class HelloDialogHandler implements HelloDialogHandlerInterface
         }
 
         return array_get($result, 'result.data.id');
+    }
+
+    /**
+     * @param string        $email
+     * @param string|null   $type       _state
+     * @return array|false
+     */
+    public function getContactByEmail($email, $type = null)
+    {
+        $contacts = $this->getContactsByEmail($email, $type);
+
+        if ( ! count($contacts)) {
+            return false;
+        }
+
+        return head($contacts);
+    }
+
+    /**
+     * @param string        $email
+     * @param string|null   $type       _state
+     * @return array
+     */
+    public function getContactsByEmail($email, $type = null)
+    {
+        // Check if the enum value is correct
+        if (null !== $type) {
+            new ContactType($type);
+        }
+
+        $call = $this->getApiInstance(static::API_CONTACTS)
+            ->condition('email', $email, 'equals');
+
+        if (null !== $type) {
+            $call->condition('_state', $type, 'equals');
+        }
+
+        $contacts = $call->get();
+
+        return $contacts ?: [];
+    }
+
+    /**
+     * @param string $email
+     * @param string $type      _state value
+     * @return bool
+     */
+    public function checkIfEmailExists($email, $type = null)
+    {
+        return (bool) $this->getContactByEmail($email, $type);
     }
 
     /**
@@ -252,21 +302,6 @@ class HelloDialogHandler implements HelloDialogHandlerInterface
     }
 
 
-    /**
-     * @param string $email
-     * @return bool
-     */
-    protected function checkIfEmailExists($email)
-    {
-        $existance = $this->getApiInstance(static::API_CONTACTS)
-            ->condition('email', $email, 'equals')
-            ->condition('_state', ContactType::CONTACT, 'equals')
-            ->get();
-
-        return $existance ? array_get($existance, '0') : false;
-    }
-
-    
     /**
      * @param string $type
      * @return HelloDialogApiInterface
