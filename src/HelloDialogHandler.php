@@ -230,13 +230,14 @@ class HelloDialogHandler implements HelloDialogHandlerInterface
     }
 
     /**
-     * @param string        $email
-     * @param string|null   $type       _state
+     * @param string               $email
+     * @param string|string[]|null $type            _state or list of states
+     * @param bool                 $excludeType     if true and type set, only matches where type does NOT match (any)
      * @return array|false
      */
-    public function getContactByEmail($email, $type = null)
+    public function getContactByEmail($email, $type = null, $excludeType = false)
     {
-        $contacts = $this->getContactsByEmail($email, $type);
+        $contacts = $this->getContactsByEmail($email, $type, $excludeType);
 
         if ( ! count($contacts)) {
             return false;
@@ -246,22 +247,38 @@ class HelloDialogHandler implements HelloDialogHandlerInterface
     }
 
     /**
-     * @param string        $email
-     * @param string|null   $type       _state
+     * @param string               $email
+     * @param string|string[]|null $type            _state or list of states
+     * @param bool                 $excludeType     if true and type set, only matches where type does NOT match (any)
      * @return array
      */
-    public function getContactsByEmail($email, $type = null)
+    public function getContactsByEmail($email, $type = null, $excludeType = false)
     {
         // Check if the enum value is correct
-        if (null !== $type) {
+        if (is_string($type)) {
             new ContactType($type);
+        } elseif (is_array($type)) {
+            array_map(function ($type) { new ContactType($type); }, $type);
         }
 
         $call = $this->getApiInstance(static::API_CONTACTS)
             ->condition('email', $email, 'equals');
 
         if (null !== $type) {
-            $call->condition('_state', $type, 'equals');
+
+            if (is_array($type)) {
+                if ($excludeType) {
+                    $call->condition('_state', implode(',', $type), 'not-equals-any');
+                } else {
+                    $call->condition('_state', implode(',', $type), 'equals-any');
+                }
+            } else {
+                if ($excludeType) {
+                    $call->condition('_state', $type, 'not-equals');
+                } else {
+                    $call->condition('_state', $type, 'equals');
+                }
+            }
         }
 
         $contacts = $call->get();
@@ -270,13 +287,14 @@ class HelloDialogHandler implements HelloDialogHandlerInterface
     }
 
     /**
-     * @param string $email
-     * @param string $type      _state value
+     * @param string          $email
+     * @param string|string[] $type         _state or list of states
+     * @param bool            $excludeType  if true and type set, only matches where type does NOT match (any)
      * @return bool
      */
-    public function checkIfEmailExists($email, $type = null)
+    public function checkIfEmailExists($email, $type = null, $excludeType = false)
     {
-        return (bool) $this->getContactByEmail($email, $type);
+        return (bool) $this->getContactByEmail($email, $type, $excludeType);
     }
 
     /**
