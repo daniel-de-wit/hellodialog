@@ -125,8 +125,8 @@ class HelloDialogHandler implements HelloDialogHandlerInterface
             $this->logException($e);
         }
 
-        // Check if contact exists first
-        $contact = $this->checkIfEmailExists($fields['email']);
+        // Get contact if it exists
+        $contact = $this->getContactByEmail($fields['email']);
 
         if ( ! $contact) {
             // E-mail does not yet exist in HelloDialog
@@ -151,18 +151,17 @@ class HelloDialogHandler implements HelloDialogHandlerInterface
             return $contactId;
         }
 
-        // E-mail already exists
-        // Let's update the contact in HelloDialog
+        // Contact with that e-mail already exists, update in HelloDialog
+
         try {
+            $fields['_state'] = (string) new ContactType($contact['_state']);
 
-            try {
-                $fields['_state'] = (string) new ContactType($contact['_state']);
+        } catch (Exception $e) {
+            // Contact type was invalid, continue gracefully with contact state
+            $fields['_state'] = ContactType::CONTACT;
+        }
 
-            } catch (Exception $e) {
-                // Contact type was invalid, continue gracefully with contact state
-                $fields['_state'] = ContactType::CONTACT;
-            }
-
+        try {
             $contact = $this->updateContact($contact['id'], $fields);
 
             if (config('hellodialog.debug')) {
@@ -174,6 +173,7 @@ class HelloDialogHandler implements HelloDialogHandlerInterface
             }
 
         } catch (Exception $e) {
+
             $this->logException($e);
             return false;
         }
