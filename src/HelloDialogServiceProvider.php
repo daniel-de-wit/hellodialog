@@ -1,8 +1,9 @@
 <?php
 namespace Czim\HelloDialog;
 
-use Czim\HelloDialog\Contracts\HelloDialogApiInterface;
+use Czim\HelloDialog\Contracts\HelloDialogApiFactoryInterface;
 use Czim\HelloDialog\Contracts\HelloDialogHandlerInterface;
+use Czim\HelloDialog\Factories\HelloDialogApiFactory;
 use Czim\HelloDialog\Mail\HelloDialogTransport;
 use Illuminate\Support\ServiceProvider;
 
@@ -33,7 +34,7 @@ class HelloDialogServiceProvider extends ServiceProvider
      */
     protected function registerHelloDialogInterfaces()
     {
-        $this->app->bind(HelloDialogApiInterface::class, HelloDialogApi::class);
+        $this->app->bind(HelloDialogApiFactoryInterface::class, HelloDialogApiFactory::class);
         $this->app->bind(HelloDialogHandlerInterface::class, HelloDialogHandler::class);
     }
 

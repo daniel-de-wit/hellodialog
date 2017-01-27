@@ -1,6 +1,7 @@
 <?php
 namespace Czim\HelloDialog;
 
+use Czim\HelloDialog\Contracts\HelloDialogApiFactoryInterface;
 use Czim\HelloDialog\Contracts\HelloDialogApiInterface;
 use Czim\HelloDialog\Contracts\HelloDialogHandlerInterface;
 use Czim\HelloDialog\Exceptions\HelloDialogErrorException;
@@ -339,7 +340,7 @@ class HelloDialogHandler implements HelloDialogHandlerInterface
      */
     protected function buildApiInstance($type)
     {
-        return app(HelloDialogApiInterface::class, [ $type ]);
+        return app(HelloDialogApiFactoryInterface::class)->make($type);
     }
 
     /**
