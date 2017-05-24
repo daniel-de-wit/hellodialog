@@ -5,6 +5,7 @@ use Czim\HelloDialog\Contracts\HelloDialogApiFactoryInterface;
 use Czim\HelloDialog\Contracts\HelloDialogHandlerInterface;
 use Czim\HelloDialog\Factories\HelloDialogApiFactory;
 use Czim\HelloDialog\Mail\HelloDialogTransport;
+use Illuminate\Foundation\Application;
 use Illuminate\Support\ServiceProvider;
 
 class HelloDialogServiceProvider extends ServiceProvider
