@@ -43,6 +43,13 @@ class HelloDialogServiceProvider extends ServiceProvider
      */
     protected function registerHelloDialogMailDriver()
     {
+        list($major, $minor) = $this->getLaravelVersion();
+
+        // Laravel needs to be at least version 5.2 for the swift.transport extension
+        if (($major == 5 && $minor <= 1) ||  $major < 5) {
+            return;
+        }
+
         $this->app['swift.transport']->extend(
             'hellodialog',
             $this->app->share(function ($app) {
@@ -50,5 +57,20 @@ class HelloDialogServiceProvider extends ServiceProvider
                 return new HelloDialogTransport($handler);
             })
         );
+    }
+
+    /**
+     * Returns version of Laravel application.
+     *
+     * @return array
+     */
+    private function getLaravelVersion()
+    {
+        preg_match('#^(?<major>\d+)\.(?<minor>\d+)(?:\..*)?$#', Application::VERSION, $matches);
+
+        $major = (int) $matches['major'];
+        $minor = (int) $matches['minor'];
+
+        return [ $major, $minor ];
     }
 }
