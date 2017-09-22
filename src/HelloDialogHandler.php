@@ -110,9 +110,11 @@ class HelloDialogHandler implements HelloDialogHandlerInterface
     }
 
     /**
+     * Creates or updates contact and returns contact ID if successful.
+     *
      * @param array  $fields
      * @param string $state
-     * @return bool
+     * @return string|int|false    contact ID or false if failed
      */
     public function saveContact(array $fields, $state = ContactType::OPT_IN)
     {
@@ -162,8 +164,14 @@ class HelloDialogHandler implements HelloDialogHandlerInterface
             $fields['_state'] = ContactType::CONTACT;
         }
 
+        // The API seems to be inconsistent and returns either a contact (object),
+        // or an array of contacts.
+        $contact = $this->normalizeToSingleContact($contact);
+
+        $contactId = $contact['id'];
+
         try {
-            $contact = $this->updateContact($contact['id'], $fields);
+            $contact = $this->updateContact($contactId, $fields);
 
             if (config('hellodialog.debug')) {
                 $this->log('createContact', 'debug', [
@@ -179,7 +187,7 @@ class HelloDialogHandler implements HelloDialogHandlerInterface
             return false;
         }
 
-        return $contact;
+        return $contactId;
     }
 
     /**
@@ -320,6 +328,25 @@ class HelloDialogHandler implements HelloDialogHandlerInterface
         return $result;
     }
 
+
+    /**
+     * Normalizes expected contact data to a single associative array, if possible.
+     *
+     * @param mixed $contacts
+     * @return false|array
+     */
+    protected function normalizeToSingleContact($contacts)
+    {
+        if (  ! is_array($contacts)) {
+            return $contacts;
+        }
+
+        if (array_key_exists('id', $contacts)) {
+            return $contacts;
+        }
+
+        return head($contacts);
+    }
 
     /**
      * @param string $type

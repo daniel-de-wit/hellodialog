@@ -24,7 +24,7 @@ interface HelloDialogHandlerInterface
     /**
      * @param array  $fields
      * @param string $state
-     * @return bool
+     * @return string|int|false    contact ID or false if failed
      */
     public function saveContact(array $fields, $state = ContactType::OPT_IN);
 
