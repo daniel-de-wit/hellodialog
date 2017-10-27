@@ -41,16 +41,17 @@ class HelloDialogHandler implements HelloDialogHandlerInterface
 
 
     /**
-     * @param string     $to
-     * @param string     $subject
-     * @param int        $template
-     * @param null|array $from associative, 'email', 'name' keys
-     * @param array      $replaces
+     * @param string      $to
+     * @param string      $subject
+     * @param int         $template
+     * @param null|array  $from associative, 'email', 'name' keys
+     * @param array       $replaces
+     * @param null|string $replyToMail
      * @return bool
      * @throws HelloDialogErrorException
      * @throws HelloDialogGeneralException
      */
-    public function transactional($to, $subject, $template = null, array $from = null, array $replaces = [])
+    public function transactional($to, $subject, $template = null, array $from = null, array $replaces = [], $replyToMail = null)
     {
         $from = $from ?: config('hellodialog.sender');
 
@@ -81,6 +82,11 @@ class HelloDialogHandler implements HelloDialogHandlerInterface
             'tag'           => $subject,
             'force_sending' => true,
         ];
+
+        // Reply to email may differ
+        if (null !== $replyToMail) {
+            array_set($data, 'reply_to.email', $replyToMail);
+        }
 
         try {
             $result = $this->getApiInstance(static::API_TRANSACTIONAL)
