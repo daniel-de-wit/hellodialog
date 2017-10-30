@@ -2,25 +2,48 @@
 namespace Czim\HelloDialog\Test;
 
 use Czim\HelloDialog\HelloDialogApi;
-use Guzzle\Http\Message\Response;
-use Guzzle\Tests\Http\Server;
+use GuzzleHttp\Client;
+use GuzzleHttp\ClientInterface;
+use GuzzleHttp\Handler\MockHandler;
+use GuzzleHttp\HandlerStack;
+use GuzzleHttp\Middleware;
+use GuzzleHttp\Psr7\Request;
+use GuzzleHttp\Psr7\Response;
+use Psr\Log\LoggerInterface;
 
 abstract class TestCase extends \Orchestra\Testbench\TestCase
 {
 
     /**
-     * @var Server
+     * @var ClientInterface|
      */
-    protected $server;
+    protected $mockClient;
 
     /**
-     * @param \Illuminate\Foundation\Application  $app
+     * List of mocked responses in order for mock Guzzle client handler.
+     *
+     * @var array
+     */
+    protected $mockResponses = [];
+
+    /**
+     * Guzzle history spy container.
+     *
+     * @var array
+     */
+    protected $historyContainer = [];
+
+    /**
+     * @var LoggerInterface|\Mockery\MockInterface|\Mockery\Mock
+     */
+    protected $mockLogger;
+
+
+    /**
+     * @param \Illuminate\Foundation\Application $app
      */
     protected function getEnvironmentSetUp($app)
     {
-        $this->server = new Server();
-        $this->server->start();
-
         // Setup default database to use sqlite :memory:
         $app['config']->set('database.default', 'testbench');
         $app['config']->set('database.connections.testbench', [
@@ -30,25 +53,25 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
         ]);
 
         $app['config']->set('hellodialog', [
-            'url'   => $this->server->getUrl(),
-            'token' => 'abcdef0123456789',
-            'sender' => [
+            'url'              => 'localhost-api.test',
+            'token'            => 'abcdef0123456789',
+            'sender'           => [
                 'email' => 'no-reply@test-hellodialog.com',
                 'name'  => 'Test',
             ],
             'default_template' => 'transactional',
-            'templates' => [
+            'templates'        => [
                 'transactional' => [
                     'id' => 1,
                 ],
             ],
-            'queue' => false,
+            'queue'            => false,
         ]);
     }
 
     public function tearDown()
     {
-        $this->server->stop();
+        $this->historyContainer = [];
 
         parent::tearDown();
     }
@@ -59,7 +82,18 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
      */
     protected function makeHelloDialogApi($path = 'transactional')
     {
-        return new HelloDialogApi($path);
+        $mock = new MockHandler($this->mockResponses);
+
+        $history = Middleware::history($this->historyContainer);
+        $handler = HandlerStack::create($mock);
+
+        $handler->push($history);
+
+        $client = new Client(['handler' => $handler]);
+
+        return (new HelloDialogApi($this->mockLogger))
+            ->setClient($client)
+            ->setType($path);
     }
 
     /**
@@ -71,13 +105,13 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
     protected function makeResponse(
         $content,
         $statusCode = 200,
-        $headers = [ 'Content-Type' => 'application/json' ]
+        $headers = ['Content-Type' => 'application/json']
     ) {
         return new Response($statusCode, $headers, $content);
     }
 
     /**
-     * @param string $content
+     * @param mixed|string $content
      * @return Response
      */
     protected function makeJsonResponse($content)
@@ -97,8 +131,49 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
                 'status'  => 'ERROR',
                 'code'    => $code,
                 'message' => $message,
-            ]
+            ],
         ]);
+    }
+
+    /**
+     * @param int $expected
+     */
+    protected function assertIsApiHistoryCount($expected)
+    {
+        static::assertCount($expected, $this->historyContainer, "{$expected} request(s) should have been made");
+    }
+
+    /**
+     * @param string      $expectedMethod
+     * @param int         $index
+     * @param string|null $message
+     */
+    protected function assertIsApiHistoryEntryCorrectRequestOfMethod($expectedMethod, $index = 0, $message = null)
+    {
+        static::assertArrayHasKey($index, $this->historyContainer, "{$index} is invalid index for request history");
+
+        $historyRecord = $this->historyContainer[ $index ];
+
+        static::assertIsApiRequestOfMethod($expectedMethod, $historyRecord['request'], $message);
+        static::assertFalse($historyRecord['options']['verify'], 'SSL verify option should be disabled');
+    }
+
+    /**
+     * @param string      $expectedMethod
+     * @param Request     $actual
+     * @param string|null $message
+     */
+    protected static function assertIsApiRequestOfMethod($expectedMethod, $actual, $message = null)
+    {
+        $message = $message ? $message . '. ' : '';
+
+        static::assertInstanceOf(Request::class, $actual, $message . 'Not a request object.');
+
+        static::assertEquals($expectedMethod, $actual->getMethod(), $message . 'Method is incorrect');
+        static::assertEquals('localhost-api.test/transactional', $actual->getUri()->getPath(), $message
+            . 'Path is incorrect.');
+        static::assertEquals('token=abcdef0123456789', $actual->getUri()->getQuery(), $message
+            . 'Query string is incorrect.');
     }
 
 }

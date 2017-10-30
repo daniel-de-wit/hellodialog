@@ -9,15 +9,18 @@ class HelloDialogApiTest extends TestCase
      */
     function it_returns_an_array_for_received_json_on_a_get_request()
     {
-        $api = $this->makeHelloDialogApi();
+        $this->mockResponses = [
+            $this->makeJsonResponse([ 'test' => 'value' ]),
+        ];
 
-        $this->server->enqueue([
-            $this->makeJsonResponse([ 'test' => 'value' ])
-        ]);
+        $api = $this->makeHelloDialogApi();
 
         $result = $api->get();
 
         $this->assertEquals([ 'test' => 'value' ], $result);
+
+        $this->assertIsApiHistoryCount(1);
+        $this->assertIsApiHistoryEntryCorrectRequestOfMethod('GET');
     }
     
 
@@ -27,11 +30,11 @@ class HelloDialogApiTest extends TestCase
      */
     function it_throws_an_exception_if_it_does_not_receive_json()
     {
-        $api = $this->makeHelloDialogApi();
+        $this->mockResponses = [
+            $this->makeResponse('no json!'),
+        ];
 
-        $this->server->enqueue([
-            $this->makeResponse('no json!')
-        ]);
+        $api = $this->makeHelloDialogApi();
 
         $api->get();
     }
@@ -42,11 +45,11 @@ class HelloDialogApiTest extends TestCase
      */
     function it_throws_an_exception_if_it_receives_a_non_200_status_code()
     {
-        $api = $this->makeHelloDialogApi();
+        $this->mockResponses = [
+            $this->makeResponse(json_encode([ 'test' => 'json' ]), 400),
+        ];
 
-        $this->server->enqueue([
-            $this->makeResponse(json_encode([ 'test' => 'json' ]), 400)
-        ]);
+        $api = $this->makeHelloDialogApi();
 
         $api->get();
     }
