@@ -2,12 +2,14 @@
 namespace Czim\HelloDialog;
 
 use Czim\HelloDialog\Contracts\HelloDialogApiInterface;
+use Czim\HelloDialog\Enums\ApiType;
 use Czim\HelloDialog\Exceptions\ConnectionException;
 use Exception;
 use GuzzleHttp\Client;
+use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Exception\ClientException;
-use GuzzleHttp\Psr7\Response;
-use Log;
+use Psr\Http\Message\ResponseInterface;
+use Psr\Log\LoggerInterface;
 
 /**
  * Class HelloDialogApi
@@ -17,6 +19,11 @@ use Log;
  */
 class HelloDialogApi implements HelloDialogApiInterface
 {
+
+    /**
+     * @var LoggerInterface
+     */
+    protected $logger;
 
     /**
      * API Token
@@ -51,6 +58,7 @@ class HelloDialogApi implements HelloDialogApiInterface
 
     /**
      * Which condition keys are valid
+     *
      * @var array
      */
     protected $validConditions = [
@@ -75,7 +83,7 @@ class HelloDialogApi implements HelloDialogApiInterface
     /**
      * Guzzle client
      *
-     * @var null|Client
+     * @var null|ClientInterface
      */
     protected $client;
 
@@ -84,30 +92,60 @@ class HelloDialogApi implements HelloDialogApiInterface
      */
     protected $lastError;
 
-    /**
-     * Constructor
-     *
-     * @param string      $path  url path, such as 'transactional'
-     * @param string      $token if set, override the config-defined token
-     * @param string      $url   base url to the API itself (requires trailing slash)
-     * @param null|Client $client
-     */
-    public function __construct($path, $token = null, $url = null, $client = null)
+
+    public function __construct(LoggerInterface $logger = null)
     {
-        $this->path   = $path;
-        $this->token  = $token ?: config('hellodialog.token');
-        $this->url    = $url ?: config('hellodialog.url');
-        $this->client = $client ?: $this->buildGuzzleClient();
+        $this->logger = $logger ?: app('log');
+
+        $this->path  = ApiType::TRANSACTIONAL;
+        $this->token = config('hellodialog.token');
+        $this->url   = config('hellodialog.url');
 
         return $this;
     }
 
     /**
-     * @return Client
+     * @param string $type
+     * @return $this
      */
-    protected function buildGuzzleClient()
+    public function setType($type)
     {
-        return app(Client::class);
+        $this->path = $type;
+
+        return $this;
+    }
+
+    /**
+     * @param string $token
+     * @return $this
+     */
+    public function setToken($token)
+    {
+        $this->token = $token;
+
+        return $this;
+    }
+
+    /**
+     * @param string $url
+     * @return $this
+     */
+    public function setUrl($url)
+    {
+        $this->url = $url;
+
+        return $this;
+    }
+
+    /**
+     * @param ClientInterface $client
+     * @return $this
+     */
+    public function setClient(ClientInterface $client)
+    {
+        $this->client = $client;
+
+        return $this;
     }
 
     /**
@@ -149,7 +187,7 @@ class HelloDialogApi implements HelloDialogApiInterface
             throw new Exception("'{$condition}' is not a valid condition");
         }
 
-        $this->conditions[$key] = [
+        $this->conditions[ $key ] = [
             'value'     => $value,
             'condition' => $condition,
         ];
@@ -158,7 +196,7 @@ class HelloDialogApi implements HelloDialogApiInterface
     }
 
     /**
-     * Perfoms a request for the PUT method
+     * Performs a request for the PUT method
      *
      * @param string $id
      * @return mixed
@@ -170,7 +208,7 @@ class HelloDialogApi implements HelloDialogApiInterface
     }
 
     /**
-     * Perfoms a request for the DELETE method
+     * Performs a request for the DELETE method
      *
      * @param string $id
      * @return mixed
@@ -182,7 +220,7 @@ class HelloDialogApi implements HelloDialogApiInterface
     }
 
     /**
-     * Perfoms a request for the GET method
+     * Performs a request for the GET method
      *
      * @param string $id
      * @return mixed
@@ -194,7 +232,7 @@ class HelloDialogApi implements HelloDialogApiInterface
     }
 
     /**
-     * Perfoms a request for the POST method
+     * Performs a request for the POST method
      *
      * @return mixed
      * @throws Exception
@@ -205,7 +243,7 @@ class HelloDialogApi implements HelloDialogApiInterface
     }
 
     /**
-     * Perfoms a request to the API
+     * Performs a request to the API
      *
      * @param string $method
      * @param string $id
@@ -215,12 +253,12 @@ class HelloDialogApi implements HelloDialogApiInterface
     protected function request($method, $id = null)
     {
         $this->lastError = null;
-        
+
         $this->checkBeforeRequest();
 
         // mock the call instead?
         if (config('hellodialog.mock')) {
-            Log::debug("Mocked {$method} request to HelloDialog.", [
+            $this->logger->debug("Mocked {$method} request to HelloDialog.", [
                 'id'         => $id,
                 'data'       => $this->data,
                 'conditions' => $this->conditions,
@@ -260,6 +298,10 @@ class HelloDialogApi implements HelloDialogApiInterface
      */
     protected function checkBeforeRequest()
     {
+        if ( ! $this->client) {
+            $this->client = $this->buildGuzzleClient();
+        }
+
         if (empty($this->path)) {
             throw new Exception("No url specified");
         }
@@ -278,11 +320,11 @@ class HelloDialogApi implements HelloDialogApiInterface
     protected function buildGuzzleOptions($method = 'GET')
     {
         $options = [
-            'verify' => false, // do not verify SSL certificate
+            'verify' => config('hellodialog.client.verify-ssl', false),
         ];
 
         // set data in body for PUT, POST or PATCH
-        if (in_array($method, ['PATCH','POST', 'PUT'])) {
+        if (in_array($method, ['PATCH', 'POST', 'PUT'])) {
             $options['body'] = json_encode($this->data);
         }
 
@@ -302,12 +344,12 @@ class HelloDialogApi implements HelloDialogApiInterface
     }
 
     /**
-     * @param Response $response
+     * @param ResponseInterface $response
      * @return array
      * @throws Exceptions\ConnectionException
      * @throws Exceptions\HelloDialogErrorException
      */
-    protected function handleResponse(Response $response)
+    protected function handleResponse(ResponseInterface $response)
     {
         if ($response->getStatusCode() < 200 || $response->getStatusCode() > 299) {
             throw new Exceptions\ConnectionException("Received unexpected status code: {$response->getStatusCode()}");
@@ -341,7 +383,7 @@ class HelloDialogApi implements HelloDialogApiInterface
             'result' => [
                 'code'    => 200,
                 'message' => 'Mocked.',
-            ]
+            ],
         ];
     }
 
@@ -353,6 +395,14 @@ class HelloDialogApi implements HelloDialogApiInterface
     protected function getBaseUrl()
     {
         return $this->url . '/' . ltrim($this->path, '/');
+    }
+
+    /**
+     * @return ClientInterface
+     */
+    protected function buildGuzzleClient()
+    {
+        return app(Client::class);
     }
 
 }

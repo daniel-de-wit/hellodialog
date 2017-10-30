@@ -16,7 +16,11 @@ class HelloDialogApiFactory implements HelloDialogApiFactoryInterface
      */
     public function make($type)
     {
-        return new HelloDialogApi($type);
+        $api = app(HelloDialogApi::class);
+
+        $api->setType($type);
+
+        return $api;
     }
 
 }

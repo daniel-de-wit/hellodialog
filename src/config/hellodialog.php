@@ -109,4 +109,19 @@ return [
     'debug' => env('HELLODIALOG_DEBUG', false),
     'mock'  => env('HELLODIALOG_MOCK', false),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Guzzle Client Options
+    |--------------------------------------------------------------------------
+    |
+    | Global configuration of client options.
+    |
+    */
+
+    'client' => [
+
+        'verify-ssl' => false,
+
+    ],
+
 ];
