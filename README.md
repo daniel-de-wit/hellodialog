@@ -7,6 +7,13 @@
 
 HelloDialog API connector / handler package.
 
+
+**This package is no longer supported!**  
+Please contact [HelloDialog](https://www.hellodialog.nl) directly if you wish to make HelloDialog API connections. 
+
+
+
+
 ## Install
 
 Via Composer

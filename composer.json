@@ -1,6 +1,6 @@
 {
     "name": "czim/hellodialog",
-    "description": "HelloDialog e-mail marketing API handler",
+    "description": "HelloDialog e-mail marketing API handler [no longer supported!]",
     "keywords": [
         "hellodialog",
         "email-marketing"
@@ -43,5 +43,8 @@
         "branch-alias": {
             "dev-master": "1.0-dev"
         }
+    },
+    "suggest": {
+        "pixelindustries/laravel-hellodialog": "Improved, supported version of this package (not open source at the moment)"
     }
 }
