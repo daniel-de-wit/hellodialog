@@ -17,7 +17,7 @@ class HelloDialogServiceProvider extends ServiceProvider
             __DIR__ . '/config/hellodialog.php' => config_path('hellodialog.php'),
         ]);
 
-        $this->registerHelloDialogMailDriver();
+        // $this->registerHelloDialogMailDriver();
     }
 
     public function register()
