@@ -53,7 +53,7 @@ class HelloDialogServiceProvider extends ServiceProvider
 
         $this->app['swift.transport']->extend(
             'hellodialog',
-            $this->app->share(function ($app) {
+            $this->app->singleton(function ($app) {
                 $handler = $app->make(HelloDialogHandlerInterface::class);
                 return new HelloDialogTransport($handler);
             })
